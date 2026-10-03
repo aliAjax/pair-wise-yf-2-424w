@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Volume2, Sun, Armchair } from 'lucide-react';
+import { MapPin, Clock, Volume2, Sun, Armchair, Snowflake } from 'lucide-react';
 import type { Bench } from '@/types';
 import { MATERIAL_LABELS, SHADE_LABELS, NOISE_LABELS, STAY_DURATION_LABELS } from '@/types';
 import Rating from '@/components/Rating/Rating';
 import { calculateComfortScore, getComfortLevel, getComfortColor } from '@/utils/comfort';
+import { useBenchStore } from '@/store/useBenchStore';
 
 interface BenchCardProps {
   bench: Bench;
@@ -12,6 +13,7 @@ interface BenchCardProps {
 
 export default function BenchCard({ bench, index = 0 }: BenchCardProps) {
   const navigate = useNavigate();
+  const isCold = useBenchStore((state) => state.tier.coldIds.includes(bench.id));
   const comfortScore = calculateComfortScore(bench);
   const comfortLevel = getComfortLevel(comfortScore);
   const comfortColor = getComfortColor(comfortScore);
@@ -29,14 +31,22 @@ export default function BenchCard({ bench, index = 0 }: BenchCardProps) {
             <Armchair className="w-10 h-10 text-moss-green/50" />
           </div>
         </div>
-        
+
         <div className="absolute top-3 right-3 px-2 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium">
           <span className={comfortColor}>{comfortLevel}</span>
           <span className="text-ink-light ml-1">{comfortScore}</span>
         </div>
 
-        <div className="absolute top-3 left-3 px-2 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs text-ink-light">
-          {MATERIAL_LABELS[bench.material]}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          <span className="px-2 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs text-ink-light">
+            {MATERIAL_LABELS[bench.material]}
+          </span>
+          {isCold && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-ink-light/80 backdrop-blur-sm rounded-full text-xs text-white">
+              <Snowflake className="w-3 h-3" />
+              冷存
+            </span>
+          )}
         </div>
       </div>
 

@@ -1,14 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, MapPin, Star, Crown, Medal, Award } from 'lucide-react';
+import { Trophy, MapPin, Star, Crown, Medal, Award, Snowflake } from 'lucide-react';
 import { useBenchStore } from '@/store/useBenchStore';
 import { calculateComfortScore, getComfortLevel, getComfortColor } from '@/utils/comfort';
 import { MATERIAL_LABELS, SHADE_LABELS } from '@/types';
-import type { Bench } from '@/types';
 
 export default function RankingPage() {
-  const { benches, initialize, initialized } = useBenchStore();
+  const { benches, tier, initialize, initialized } = useBenchStore();
   const navigate = useNavigate();
+  // 排行榜默认只算在库
+  const [includeCold, setIncludeCold] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
@@ -16,7 +17,12 @@ export default function RankingPage() {
     }
   }, [initialized, initialize]);
 
-  const rankedBenches = [...benches]
+  const scopedBenches = includeCold
+    ? benches
+    : benches.filter((bench) => !tier.coldIds.includes(bench.id));
+  const coldCount = tier.coldIds.length;
+
+  const rankedBenches = [...scopedBenches]
     .sort((a, b) => calculateComfortScore(b) - calculateComfortScore(a))
     .map((bench, index) => ({ bench, rank: index + 1 }));
 
@@ -36,13 +42,29 @@ export default function RankingPage() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h2 className="font-serif text-2xl font-semibold text-deep-brown mb-1">
-          舒适度排行
-        </h2>
-        <p className="text-ink-light text-sm">
-          综合评分最高的长椅
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="font-serif text-2xl font-semibold text-deep-brown mb-1">
+            舒适度排行
+          </h2>
+          <p className="text-ink-light text-sm">
+            综合评分最高的长椅
+          </p>
+        </div>
+        {coldCount > 0 && (
+          <label className="flex items-center gap-2 cursor-pointer select-none paper-texture rounded-lg shadow-paper px-3 py-2">
+            <input
+              type="checkbox"
+              checked={includeCold}
+              onChange={(e) => setIncludeCold(e.target.checked)}
+              className="accent-moss-green"
+            />
+            <span className="text-xs text-ink-light inline-flex items-center gap-1">
+              <Snowflake className="w-3 h-3" />
+              纳入冷存（{coldCount}）
+            </span>
+          </label>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -69,6 +91,12 @@ export default function RankingPage() {
                     <h3 className="font-serif font-semibold text-deep-brown truncate">
                       {bench.name}
                     </h3>
+                    {tier.coldIds.includes(bench.id) && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-ink-light/10 text-ink-light text-[10px] font-medium flex-shrink-0">
+                        <Snowflake className="w-2.5 h-2.5" />
+                        冷存
+                      </span>
+                    )}
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${comfortColor} bg-white/80`}>
                       {comfortLevel}
                     </span>

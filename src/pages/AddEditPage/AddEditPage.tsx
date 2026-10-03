@@ -59,9 +59,9 @@ export default function AddEditPage() {
 
   useEffect(() => {
     if (!initialized) {
-      initialize();
+      initialize(isEdit ? id ?? null : null);
     }
-  }, [initialized, initialize]);
+  }, [initialized, initialize, isEdit, id]);
 
   useEffect(() => {
     if (isEdit && existingBench && initialized) {
@@ -399,7 +399,7 @@ export default function AddEditPage() {
 
             {experiences.length > 0 ? (
               <div className="space-y-4">
-                {experiences.map((exp, index) => {
+                {experiences.map((exp) => {
                   const TimeIcon = timePeriodIcons[exp.timePeriod];
                   return (
                     <div

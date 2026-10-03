@@ -14,6 +14,7 @@ import {
   Sunset,
   Moon,
   CloudSun,
+  Snowflake,
 } from 'lucide-react';
 import { useBenchStore } from '@/store/useBenchStore';
 import {
@@ -31,16 +32,27 @@ import { calculateComfortScore, getComfortLevel, getComfortColor } from '@/utils
 export default function BenchDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getBenchById, deleteBench, initialize, initialized } = useBenchStore();
+  const { getBenchById, deleteBench, initialize, initialized, touchBench, isCold } = useBenchStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
-      initialize();
+      // 正在查看的这条受保护：升级分层/续挪批次时都不能把它挪走
+      initialize(id ?? null);
     }
-  }, [initialized, initialize]);
+  }, [initialized, initialize, id]);
 
   const bench = id ? getBenchById(id) : undefined;
+  const cold = bench ? isCold(bench.id) : false;
+
+  // 冷存档案被重新打开：记录最近查看时间并回到在库
+  useEffect(() => {
+    if (initialized && id && bench) {
+      touchBench(id);
+    }
+    // 只在档案首次载入时触发一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, id]);
 
   useEffect(() => {
     if (bench === undefined && initialized) {
@@ -106,9 +118,17 @@ export default function BenchDetail() {
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="font-serif text-2xl font-bold text-deep-brown mb-2">
-                    {bench.name}
-                  </h1>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h1 className="font-serif text-2xl font-bold text-deep-brown">
+                      {bench.name}
+                    </h1>
+                    {cold && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ink-light/10 text-ink-light">
+                        <Snowflake className="w-3 h-3" />
+                        冷存
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1 text-ink-light">
                     <MapPin className="w-4 h-4 flex-shrink-0" />
                     <span>{bench.location}</span>
@@ -274,6 +294,12 @@ export default function BenchDetail() {
                 <span className="text-ink-light">更新时间</span>
                 <span className="text-deep-brown">
                   {new Date(bench.updatedAt).toLocaleDateString('zh-CN')}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-light">最近查看</span>
+                <span className="text-deep-brown">
+                  {new Date(bench.lastViewedAt).toLocaleDateString('zh-CN')}
                 </span>
               </div>
               <div className="flex justify-between">

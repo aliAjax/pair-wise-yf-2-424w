@@ -1,6 +1,10 @@
 import type { Bench } from '@/types';
 
-export const mockBenches: Bench[] = [
+/**
+ * 种子数据模拟升级前的旧档案：故意不带 lastViewedAt，
+ * 首次初始化时按 createdAt 补齐并做首次分层。
+ */
+export const mockBenches: Omit<Bench, 'lastViewedAt'>[] = [
   {
     id: 'bench-001',
     name: '梧桐树下的老长椅',

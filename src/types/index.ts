@@ -30,6 +30,8 @@ export interface Bench {
   experiences: BenchExperience[];
   createdAt: string;
   updatedAt: string;
+  /** 最近一次查看时间，旧数据升级时按 createdAt 补齐 */
+  lastViewedAt: string;
 }
 
 export const MATERIAL_LABELS: Record<MaterialType, string> = {

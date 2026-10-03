@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Armchair, Info } from 'lucide-react';
+import { MapPin, Armchair, Info, Snowflake } from 'lucide-react';
 import { useBenchStore } from '@/store/useBenchStore';
 import { calculateComfortScore, getComfortColor } from '@/utils/comfort';
 import type { Bench } from '@/types';
 
 export default function MapPage() {
-  const { benches, initialize, initialized } = useBenchStore();
+  const { benches, tier, initialize, initialized } = useBenchStore();
   const navigate = useNavigate();
   const [hoveredBench, setHoveredBench] = useState<Bench | null>(null);
+  // 地图默认只算在库，冷存点位按需展开
+  const [showCold, setShowCold] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
       initialize();
     }
   }, [initialized, initialize]);
+
+  const visibleBenches = showCold
+    ? benches
+    : benches.filter((bench) => !tier.coldIds.includes(bench.id));
+  const coldCount = tier.coldIds.length;
 
   const getPositionStyle = (bench: Bench) => {
     const latRange = { min: 31.22, max: 31.25 };
@@ -57,11 +64,12 @@ export default function MapPage() {
             <div className="absolute top-1/2 left-1/2 w-24 h-16 rounded-full bg-moss-green/5 blur-lg" />
           </div>
 
-          {benches.map((bench) => {
+          {visibleBenches.map((bench) => {
             const position = getPositionStyle(bench);
             const comfortScore = calculateComfortScore(bench);
             const colorClass = getComfortColor(comfortScore);
-            
+            const isCold = tier.coldIds.includes(bench.id);
+
             return (
               <button
                 key={bench.id}
@@ -75,12 +83,19 @@ export default function MapPage() {
                   hoveredBench?.id === bench.id ? 'scale-125 z-10' : 'z-0'
                 } transition-transform duration-200`}>
                   <MapPin
-                    className={`w-8 h-8 ${colorClass} drop-shadow-md group-hover:drop-shadow-lg transition-all`}
+                    className={`w-8 h-8 drop-shadow-md group-hover:drop-shadow-lg transition-all ${
+                      isCold ? 'text-ink-light/40' : colorClass
+                    }`}
                     fill="currentColor"
                   />
                   <div className="absolute top-1 left-1/2 -translate-x-1/2">
                     <Armchair className="w-3 h-3 text-white" />
                   </div>
+                  {isCold && (
+                    <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">
+                      <Snowflake className="w-2.5 h-2.5 text-ink-light" />
+                    </div>
+                  )}
                 </div>
 
                 {hoveredBench?.id === bench.id && (
@@ -110,20 +125,36 @@ export default function MapPage() {
             </div>
           </div>
 
-          <div className="absolute top-4 right-4 paper-texture rounded-lg shadow-paper p-3">
-            <h4 className="text-xs font-medium text-deep-brown mb-2">图例</h4>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-moss-green" fill="currentColor" />
-                <span className="text-xs text-ink-light">极佳/优秀</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-ochre" fill="currentColor" />
-                <span className="text-xs text-ink-light">良好</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-ink-light" fill="currentColor" />
-                <span className="text-xs text-ink-light">一般/较差</span>
+          <div className="absolute top-4 right-4 paper-texture rounded-lg shadow-paper p-3 space-y-3">
+            {coldCount > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showCold}
+                  onChange={(e) => setShowCold(e.target.checked)}
+                  className="accent-moss-green"
+                />
+                <span className="text-xs text-ink-light inline-flex items-center gap-1">
+                  <Snowflake className="w-3 h-3" />
+                  显示冷存（{coldCount}）
+                </span>
+              </label>
+            )}
+            <div>
+              <h4 className="text-xs font-medium text-deep-brown mb-2">图例</h4>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-moss-green" fill="currentColor" />
+                  <span className="text-xs text-ink-light">极佳/优秀</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-ochre" fill="currentColor" />
+                  <span className="text-xs text-ink-light">良好</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-ink-light" fill="currentColor" />
+                  <span className="text-xs text-ink-light">一般/较差</span>
+                </div>
               </div>
             </div>
           </div>
@@ -132,7 +163,13 @@ export default function MapPage() {
 
       <div className="mt-4 text-center">
         <p className="text-sm text-ink-light">
-          共 <span className="font-medium text-deep-brown">{benches.length}</span> 张长椅
+          在库 <span className="font-medium text-deep-brown">{benches.length - coldCount}</span> 张
+          {coldCount > 0 && (
+            <>
+              {' '}· 冷存 <span className="font-medium text-ink-light">{coldCount}</span> 张
+              {!showCold && '（未显示）'}
+            </>
+          )}
         </p>
       </div>
     </div>
