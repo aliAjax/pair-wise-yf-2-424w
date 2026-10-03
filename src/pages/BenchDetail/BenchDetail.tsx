@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -14,6 +14,7 @@ import {
   Sunset,
   Moon,
   CloudSun,
+  ArchiveRestore,
 } from 'lucide-react';
 import { useBenchStore } from '@/store/useBenchStore';
 import {
@@ -31,8 +32,10 @@ import { calculateComfortScore, getComfortLevel, getComfortColor } from '@/utils
 export default function BenchDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getBenchById, deleteBench, initialize, initialized } = useBenchStore();
+  const { getBenchById, deleteBench, initialize, initialized, recordBenchView } = useBenchStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [restoredFromCold, setRestoredFromCold] = useState(false);
+  const recordedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!initialized) {
@@ -41,6 +44,17 @@ export default function BenchDetail() {
   }, [initialized, initialize]);
 
   const bench = id ? getBenchById(id) : undefined;
+
+  // 打开档案即记录查看；冷存档案被重新打开后回到在库
+  useEffect(() => {
+    if (id && bench && initialized && recordedRef.current !== id) {
+      recordedRef.current = id;
+      if (bench.storageTier === 'cold') {
+        setRestoredFromCold(true);
+      }
+      recordBenchView(id);
+    }
+  }, [id, bench, initialized, recordBenchView]);
 
   useEffect(() => {
     if (bench === undefined && initialized) {
@@ -104,11 +118,29 @@ export default function BenchDetail() {
             </div>
 
             <div className="p-6">
+              {restoredFromCold && (
+                <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-ochre/10 text-ochre rounded-lg text-sm">
+                  <ArchiveRestore className="w-4 h-4 flex-shrink-0" />
+                  <span>该档案原在冷存中，本次查看已恢复到在库。</span>
+                </div>
+              )}
+
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="font-serif text-2xl font-bold text-deep-brown mb-2">
-                    {bench.name}
-                  </h1>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h1 className="font-serif text-2xl font-bold text-deep-brown">
+                      {bench.name}
+                    </h1>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        bench.storageTier === 'cold'
+                          ? 'bg-ochre/15 text-ochre'
+                          : 'bg-moss-green/15 text-moss-green'
+                      }`}
+                    >
+                      {bench.storageTier === 'cold' ? '冷存' : '在库'}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1 text-ink-light">
                     <MapPin className="w-4 h-4 flex-shrink-0" />
                     <span>{bench.location}</span>
@@ -274,6 +306,14 @@ export default function BenchDetail() {
                 <span className="text-ink-light">更新时间</span>
                 <span className="text-deep-brown">
                   {new Date(bench.updatedAt).toLocaleDateString('zh-CN')}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-light">最近查看</span>
+                <span className="text-deep-brown">
+                  {bench.lastViewedAt
+                    ? new Date(bench.lastViewedAt).toLocaleDateString('zh-CN')
+                    : '—'}
                 </span>
               </div>
               <div className="flex justify-between">

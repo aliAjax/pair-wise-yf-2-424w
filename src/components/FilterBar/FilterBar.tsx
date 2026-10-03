@@ -5,6 +5,7 @@ import type { MaterialType, OrientationType, ShadeLevelType, NoiseLevelType } fr
 
 export default function FilterBar() {
   const {
+    benches,
     searchQuery,
     materialFilter,
     orientationFilter,
@@ -16,11 +17,11 @@ export default function FilterBar() {
     setShadeFilter,
     setNoiseFilter,
     clearFilters,
-    getFilteredBenches,
   } = useBenchStore();
 
   const hasFilters = searchQuery || materialFilter || orientationFilter || shadeFilter || noiseFilter;
-  const filteredCount = getFilteredBenches().length;
+  const hotCount = benches.filter((bench) => bench.storageTier !== 'cold').length;
+  const coldCount = benches.filter((bench) => bench.storageTier === 'cold').length;
 
   return (
     <div className="paper-texture rounded-xl shadow-paper p-4 mb-6">
@@ -93,7 +94,13 @@ export default function FilterBar() {
 
           <div className="flex items-center gap-3 ml-auto">
             <span className="text-sm text-ink-light">
-              共 <span className="font-medium text-deep-brown">{filteredCount}</span> 条记录
+              在库 <span className="font-medium text-deep-brown">{hotCount}</span>
+              {coldCount > 0 && (
+                <>
+                  {' · '}
+                  冷存 <span className="font-medium text-ochre">{coldCount}</span>
+                </>
+              )}
             </span>
             {hasFilters && (
               <button

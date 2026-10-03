@@ -2,11 +2,14 @@ import { useEffect } from 'react';
 import { useBenchStore } from '@/store/useBenchStore';
 import FilterBar from '@/components/FilterBar/FilterBar';
 import BenchCard from '@/components/BenchCard/BenchCard';
-import { Armchair } from 'lucide-react';
+import { Armchair, Archive } from 'lucide-react';
 
 export default function ListPage() {
   const { benches, getFilteredBenches, initialize, initialized } = useBenchStore();
   const filteredBenches = getFilteredBenches();
+  const hotBenches = filteredBenches.filter((bench) => bench.storageTier !== 'cold');
+  const coldBenches = filteredBenches.filter((bench) => bench.storageTier === 'cold');
+  const totalHot = benches.filter((bench) => bench.storageTier !== 'cold').length;
 
   useEffect(() => {
     if (!initialized) {
@@ -28,23 +31,46 @@ export default function ListPage() {
       <FilterBar />
 
       {filteredBenches.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredBenches.map((bench, index) => (
-            <BenchCard key={bench.id} bench={bench} index={index} />
-          ))}
-        </div>
+        <>
+          {hotBenches.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {hotBenches.map((bench, index) => (
+                <BenchCard key={bench.id} bench={bench} index={index} />
+              ))}
+            </div>
+          )}
+
+          {coldBenches.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Archive className="w-4 h-4 text-ochre" />
+                <h3 className="font-serif text-lg font-semibold text-deep-brown">
+                  冷存档案
+                </h3>
+                <span className="text-xs text-ink-light">
+                  （搜索命中 {coldBenches.length} 条，打开后自动回到在库）
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {coldBenches.map((bench, index) => (
+                  <BenchCard key={bench.id} bench={bench} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="paper-texture rounded-xl shadow-paper p-12 text-center">
           <div className="w-16 h-16 rounded-full bg-moss-green/10 flex items-center justify-center mx-auto mb-4">
             <Armchair className="w-8 h-8 text-moss-green/50" />
           </div>
           <h3 className="font-serif text-lg font-medium text-deep-brown mb-2">
-            {benches.length === 0 ? '还没有长椅档案' : '没有找到匹配的长椅'}
+            {totalHot === 0 ? '还没有长椅档案' : '没有找到匹配的长椅'}
           </h3>
           <p className="text-ink-light text-sm">
-            {benches.length === 0
+            {totalHot === 0
               ? '点击右上角的添加按钮，记录第一张长椅档案吧'
-              : '试试调整筛选条件或搜索关键词'}
+              : '试试调整筛选条件或搜索关键词（冷存档案也可以被搜到）'}
           </p>
         </div>
       )}

@@ -4,6 +4,7 @@ export type ShadeLevelType = 'none' | 'partial' | 'full';
 export type NoiseLevelType = 'quiet' | 'moderate' | 'noisy';
 export type StayDurationType = 'short' | 'medium' | 'long' | 'verylong';
 export type TimePeriodType = 'morning' | 'noon' | 'afternoon' | 'evening' | 'night';
+export type StorageTier = 'hot' | 'cold';
 
 export interface BenchExperience {
   id: string;
@@ -30,6 +31,10 @@ export interface Bench {
   experiences: BenchExperience[];
   createdAt: string;
   updatedAt: string;
+  /** 存储分层：hot=在库，cold=冷存。同一条档案只能属于其中一层 */
+  storageTier: StorageTier;
+  /** 最近查看时间（ISO）。历史数据缺失时按创建时间补齐 */
+  lastViewedAt: string;
 }
 
 export const MATERIAL_LABELS: Record<MaterialType, string> = {

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from '@/components/Layout/Navbar';
+import ColdMigrationToast from '@/components/ColdMigrationToast/ColdMigrationToast';
 import ListPage from '@/pages/ListPage/ListPage';
 import MapPage from '@/pages/MapPage/MapPage';
 import RankingPage from '@/pages/RankingPage/RankingPage';
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/edit/:id" element={<AddEditPage />} />
           </Routes>
         </main>
+        <ColdMigrationToast />
       </div>
     </Router>
   );

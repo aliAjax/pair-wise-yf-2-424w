@@ -16,6 +16,10 @@ export default function MapPage() {
     }
   }, [initialized, initialize]);
 
+  // 地图默认只显示在库档案，冷存档案可在列表中搜索到
+  const visibleBenches = benches.filter((bench) => bench.storageTier !== 'cold');
+  const coldCount = benches.length - visibleBenches.length;
+
   const getPositionStyle = (bench: Bench) => {
     const latRange = { min: 31.22, max: 31.25 };
     const lngRange = { min: 121.46, max: 121.495 };
@@ -57,7 +61,7 @@ export default function MapPage() {
             <div className="absolute top-1/2 left-1/2 w-24 h-16 rounded-full bg-moss-green/5 blur-lg" />
           </div>
 
-          {benches.map((bench) => {
+          {visibleBenches.map((bench) => {
             const position = getPositionStyle(bench);
             const comfortScore = calculateComfortScore(bench);
             const colorClass = getComfortColor(comfortScore);
@@ -132,7 +136,13 @@ export default function MapPage() {
 
       <div className="mt-4 text-center">
         <p className="text-sm text-ink-light">
-          共 <span className="font-medium text-deep-brown">{benches.length}</span> 张长椅
+          在库 <span className="font-medium text-deep-brown">{visibleBenches.length}</span> 张长椅
+          {coldCount > 0 && (
+            <>
+              {' · '}
+              冷存 <span className="font-medium text-ochre">{coldCount}</span> 张（可在列表搜索）
+            </>
+          )}
         </p>
       </div>
     </div>

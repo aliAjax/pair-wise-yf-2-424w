@@ -1,6 +1,6 @@
 import type { Bench } from '@/types';
 
-export const mockBenches: Bench[] = [
+export const mockBenches: Array<Omit<Bench, 'storageTier' | 'lastViewedAt'>> = [
   {
     id: 'bench-001',
     name: '梧桐树下的老长椅',
